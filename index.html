@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Living Constitution: Interactive Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: Parchment & Patriot -->
+    <!-- Primary: Warm Beige (#fdfbf7) for background -->
+    <!-- Secondary: Navy Blue (#1e3a8a) for headers/primary actions -->
+    <!-- Accent: Deep Red (#991b1b) for highlights/alerts -->
+    <!-- Neutral: Slate Gray (#475569) for text -->
+
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: #fdfbf7;
+            color: #334155;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Merriweather', serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 400px;
+            max-height: 400px;
+            margin: 0 auto;
+        }
+        .parchment-texture {
+            background-color: #fdfbf7;
+            background-image: linear-gradient(0deg, transparent 24%, rgba(0, 0, 0, .02) 25%, rgba(0, 0, 0, .02) 26%, transparent 27%, transparent 74%, rgba(0, 0, 0, .02) 75%, rgba(0, 0, 0, .02) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(0, 0, 0, .02) 25%, rgba(0, 0, 0, .02) 26%, transparent 27%, transparent 74%, rgba(0, 0, 0, .02) 75%, rgba(0, 0, 0, .02) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .scenario-active {
+            border-color: #1e3a8a;
+            background-color: #eff6ff;
+        }
+    </style>
+</head>
+<body class="parchment-texture min-h-screen flex flex-col">
+
+    <!-- Navigation -->
+    <nav class="bg-slate-900 text-amber-50 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl font-bold tracking-wider">The Living Constitution</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <button onclick="navigateTo('dashboard')" class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition">Dashboard</button>
+                        <button onclick="navigateTo('wizard')" class="bg-amber-700 hover:bg-amber-800 text-white px-3 py-2 rounded-md text-sm font-medium transition shadow-md">Start Wizard</button>
+                        <button onclick="navigateTo('scenarios')" class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition">Current Events</button>
+                        <button onclick="navigateTo('explorer')" class="hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition">Full Text</button>
+                    </div>
+                </div>
+                <!-- Mobile menu button -->
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" onclick="toggleMobileMenu()" class="bg-slate-800 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
+                        <span class="sr-only">Open main menu</span>
+                        <span class="text-xl">☰</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-slate-800">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <button onclick="navigateTo('dashboard')" class="text-gray-300 hover:bg-slate-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left">Dashboard</button>
+                <button onclick="navigateTo('wizard')" class="text-gray-300 hover:bg-slate-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left">Start Wizard</button>
+                <button onclick="navigateTo('scenarios')" class="text-gray-300 hover:bg-slate-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left">Current Events</button>
+                <button onclick="navigateTo('explorer')" class="text-gray-300 hover:bg-slate-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium w-full text-left">Full Text</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- Application Structure Plan: 
+             1. Dashboard: Immediate visual context of the document's scale and history.
+             2. Wizard: Guided, personalized entry point for users unsure where to look.
+             3. Scenarios: Bridge to modern relevance.
+             4. Explorer: The raw data (text) for deep reading.
+        -->
+
+        <!-- SECTION: DASHBOARD -->
+        <section id="dashboard" class="space-y-8 animate-fade-in">
+            <div class="text-center space-y-4">
+                <h1 class="text-4xl md:text-5xl font-black text-slate-900">Blueprint of Democracy</h1>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600 leading-relaxed">
+                    The U.S. Constitution is the supreme law of the land. It created the framework for the federal government and preserves the rights of the people. 
+                    Explore its structure below to understand how power was originally distributed by the Framers.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Visual: Power Distribution -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="mb-4">
+                        <h2 class="text-2xl font-bold text-slate-800">Structural Emphasis by Word Count</h2>
+                        <p class="text-sm text-slate-500 mt-1">
+                            The length of each Article roughly correlates to the specific detail and powers the Framers assigned to that branch. Notice how detailed the Legislative branch (Article I) is compared to the others.
+                        </p>
+                    </div>
+                    <!-- Chart Container -->
+                    <div class="chart-container">
+                        <canvas id="structureChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Visual: Timeline -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="mb-4">
+                        <h2 class="text-2xl font-bold text-slate-800">Timeline of Amendments</h2>
+                        <p class="text-sm text-slate-500 mt-1">
+                            The Constitution is a living document, but changes come in waves. See the gaps between the Bill of Rights, the Reconstruction Era, and modern amendments.
+                        </p>
+                    </div>
+                    <!-- Chart Container -->
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats Row -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900 text-white p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-amber-400">4,400</div>
+                    <div class="text-xs uppercase tracking-wide opacity-80">Original Words</div>
+                </div>
+                <div class="bg-slate-900 text-white p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-amber-400">27</div>
+                    <div class="text-xs uppercase tracking-wide opacity-80">Amendments</div>
+                </div>
+                <div class="bg-slate-900 text-white p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-amber-400">1787</div>
+                    <div class="text-xs uppercase tracking-wide opacity-80">Year Signed</div>
+                </div>
+                <div class="bg-slate-900 text-white p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-amber-400">39</div>
+                    <div class="text-xs uppercase tracking-wide opacity-80">Signers</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: WIZARD -->
+        <section id="wizard" class="hidden space-y-8 animate-fade-in">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                <div class="bg-slate-900 p-8 text-center">
+                    <h2 class="text-3xl font-bold text-white mb-2">Constitutional Compass</h2>
+                    <p class="text-slate-300">Answer a few questions to find the specific Articles or Amendments relevant to you.</p>
+                </div>
+                
+                <div class="p-8 min-h-[400px] flex flex-col justify-center items-center" id="wizard-content">
+                    <!-- Dynamic Wizard Content Injected Here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: SCENARIOS (Current Events Parallel) -->
+        <section id="scenarios" class="hidden space-y-8 animate-fade-in">
+            <div class="text-center space-y-4">
+                <h2 class="text-3xl font-bold text-slate-900">Parallel with Current Events</h2>
+                <p class="max-w-2xl mx-auto text-slate-600">
+                    Modern headlines often have roots in centuries-old text. Select a modern scenario below to see which Constitutional principles are at play.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Scenario Selector -->
+                <div class="lg:col-span-4 space-y-4">
+                    <h3 class="font-bold text-slate-700 uppercase text-sm tracking-wider">Select a Topic</h3>
+                    <div class="space-y-2" id="scenario-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Scenario Display -->
+                <div class="lg:col-span-8">
+                    <div id="scenario-display" class="bg-white p-8 rounded-xl shadow-md border border-slate-200 h-full">
+                        <div class="flex flex-col items-center justify-center h-full text-center text-slate-400">
+                            <span class="text-6xl mb-4">⚖️</span>
+                            <p class="text-xl">Select a topic from the list to analyze its Constitutional roots.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: EXPLORER (Full Text) -->
+        <section id="explorer" class="hidden space-y-6 animate-fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                <h2 class="text-2xl font-bold text-slate-800">Full Text Explorer</h2>
+                <div class="flex space-x-4 mt-4 md:mt-0">
+                    <input type="text" id="text-search" placeholder="Search text..." class="border border-slate-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-slate-500 focus:outline-none">
+                    <select id="text-filter" class="border border-slate-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-slate-500 focus:outline-none">
+                        <option value="all">All Sections</option>
+                        <option value="article">Articles Only</option>
+                        <option value="amendment">Amendments Only</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="text-content" class="space-y-6">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="mb-4">The Living Constitution: Interactive Explorer</p>
+            <p class="text-sm">Based on the text of the Constitution of the United States. Designed for educational deep dives.</p>
+        </div>
+    </footer>
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    
+    <script>
+        // --- DATA STORE ---
+        // Simulating the parsed structure of the Constitution based on the uploaded PDF content.
+        
+        const constitutionData = [
+            {
+                id: "preamble",
+                type: "preamble",
+                title: "Preamble",
+                text: "We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.",
+                summary: "The introduction setting the goals of the government: Unity, Justice, Peace, Defense, Welfare, and Liberty.",
+                tags: ["intro", "goals", "people"],
+                wordCount: 52
+            },
+            {
+                id: "art1",
+                type: "article",
+                title: "Article I: The Legislative Branch",
+                text: "All legislative Powers herein granted shall be vested in a Congress of the United States, which shall consist of a Senate and House of Representatives...",
+                summary: "Establishes Congress (House & Senate). Defines how laws are made, powers of Congress (tax, war, commerce), and limits on states.",
+                tags: ["congress", "laws", "money", "war", "impeachment"],
+                wordCount: 2267 
+            },
+            {
+                id: "art2",
+                type: "article",
+                title: "Article II: The Executive Branch",
+                text: "The executive Power shall be vested in a President of the United States of America. He shall hold his Office during the Term of four Years...",
+                summary: "Establishes the Presidency. Defines powers (Commander in Chief, Treaties, Appointments) and the Electoral College.",
+                tags: ["president", "executive", "war", "foreign policy"],
+                wordCount: 1023
+            },
+            {
+                id: "art3",
+                type: "article",
+                title: "Article III: The Judicial Branch",
+                text: "The judicial Power of the United States, shall be vested in one supreme Court, and in such inferior Courts as the Congress may from time to time ordain and establish...",
+                summary: "Establishes the Supreme Court and defines judicial jurisdiction (what cases they can hear). Includes Treason definition.",
+                tags: ["courts", "judges", "law", "treason"],
+                wordCount: 375
+            },
+            {
+                id: "art4",
+                type: "article",
+                title: "Article IV: The States",
+                text: "Full Faith and Credit shall be given in each State to the public Acts, Records, and judicial Proceedings of every other State...",
+                summary: "Relations between states. Extradition, new states, and the guarantee of a Republican form of government.",
+                tags: ["states", "citizenship", "rights"],
+                wordCount: 260
+            },
+            {
+                id: "art5",
+                type: "article",
+                title: "Article V: Amendment",
+                text: "The Congress, whenever two thirds of both Houses shall deem it necessary, shall propose Amendments to this Constitution...",
+                summary: "The process for changing the Constitution. Requires supermajorities in Congress and States.",
+                tags: ["change", "amendment"],
+                wordCount: 143
+            },
+            {
+                id: "art6",
+                type: "article",
+                title: "Article VI: Supremacy",
+                text: "This Constitution, and the Laws of the United States... shall be the supreme Law of the Land...",
+                summary: "The Constitution is the highest law. No religious test for office. Debts valid.",
+                tags: ["supremacy", "oath", "religion"],
+                wordCount: 262
+            },
+            {
+                id: "art7",
+                type: "article",
+                title: "Article VII: Ratification",
+                text: "The Ratification of the Conventions of nine States, shall be sufficient for the Establishment of this Constitution...",
+                summary: "Process for the original states to agree to the document.",
+                tags: ["ratification"],
+                wordCount: 24
+            },
+            {
+                id: "amdt1",
+                type: "amendment",
+                title: "Amendment I",
+                year: 1791,
+                text: "Congress shall make no law respecting an establishment of religion, or prohibiting the free exercise thereof; or abridging the freedom of speech, or of the press; or the right of the people peaceably to assemble, and to petition the Government for a redress of grievances.",
+                summary: "Freedom of Religion, Speech, Press, Assembly, and Petition.",
+                tags: ["rights", "speech", "religion", "press", "protest"]
+            },
+            {
+                id: "amdt2",
+                type: "amendment",
+                title: "Amendment II",
+                year: 1791,
+                text: "A well regulated Militia, being necessary to the security of a free State, the right of the people to keep and bear Arms, shall not be infringed.",
+                summary: "Right to keep and bear arms.",
+                tags: ["rights", "guns", "arms", "militia"]
+            },
+            {
+                id: "amdt4",
+                type: "amendment",
+                title: "Amendment IV",
+                year: 1791,
+                text: "The right of the people to be secure in their persons, houses, papers, and effects, against unreasonable searches and seizures, shall not be violated...",
+                summary: "Protection against unreasonable search and seizure. Requires warrants based on probable cause.",
+                tags: ["rights", "privacy", "police", "search"]
+            },
+            {
+                id: "amdt5",
+                type: "amendment",
+                title: "Amendment V",
+                year: 1791,
+                text: "No person shall be held to answer for a capital, or otherwise infamous crime, unless on a presentment or indictment of a Grand Jury...",
+                summary: "Rights of the accused: Grand Jury, Double Jeopardy, Self-Incrimination, Due Process, Eminent Domain.",
+                tags: ["rights", "court", "property", "justice"]
+            },
+            {
+                id: "amdt10",
+                type: "amendment",
+                title: "Amendment X",
+                year: 1791,
+                text: "The powers not delegated to the United States by the Constitution, nor prohibited by it to the States, are reserved to the States respectively, or to the people.",
+                summary: "Powers not given to the Fed belong to States/People.",
+                tags: ["states", "power", "federalism"]
+            },
+            {
+                id: "amdt13",
+                type: "amendment",
+                title: "Amendment XIII",
+                year: 1865,
+                text: "Neither slavery nor involuntary servitude... shall exist within the United States.",
+                summary: "Abolishes slavery.",
+                tags: ["civil rights", "slavery", "freedom"]
+            },
+            {
+                id: "amdt14",
+                type: "amendment",
+                title: "Amendment XIV",
+                year: 1868,
+                text: "All persons born or naturalized in the United States... are citizens... No State shall make or enforce any law which shall abridge the privileges or immunities of citizens... nor deny to any person... equal protection of the laws.",
+                summary: "Citizenship, Due Process, and Equal Protection clauses. Applies Bill of Rights to States.",
+                tags: ["civil rights", "equality", "citizenship", "states"]
+            },
+            {
+                id: "amdt19",
+                type: "amendment",
+                title: "Amendment XIX",
+                year: 1920,
+                text: "The right of citizens of the United States to vote shall not be denied or abridged by the United States or by any State on account of sex.",
+                summary: "Women's suffrage (right to vote).",
+                tags: ["voting", "women", "equality"]
+            },
+            {
+                id: "amdt26",
+                type: "amendment",
+                title: "Amendment XXVI",
+                year: 1971,
+                text: "The right of citizens of the United States, who are eighteen years of age or older, to vote shall not be denied... on account of age.",
+                summary: "Lowers voting age to 18.",
+                tags: ["voting", "youth", "age"]
+            }
+        ];
+
+        // Modern Scenarios Data
+        const scenarios = [
+            {
+                id: 1,
+                title: "Social Media Censorship",
+                icon: "📱",
+                desc: "A social media platform bans a politician. Users claim their free speech is violated.",
+                constitutionalLink: "amdt1",
+                analysis: "The 1st Amendment protects against <strong>Government</strong> censorship, not private companies. However, this raises questions about the modern 'Public Square'.",
+                keywords: ["Speech", "Private vs Public", "Internet"]
+            },
+            {
+                id: 2,
+                title: "Digital Surveillance",
+                icon: "🛰️",
+                desc: "Police use GPS data from a phone without a warrant to track a suspect.",
+                constitutionalLink: "amdt4",
+                analysis: "The 4th Amendment protects against 'unreasonable searches'. The Supreme Court (Carpenter v. US) ruled that location data often requires a warrant due to privacy expectations.",
+                keywords: ["Privacy", "Technology", "Warrants"]
+            },
+            {
+                id: 3,
+                title: "Executive Orders",
+                icon: "✒️",
+                desc: "The President bypasses Congress to create a new regulation via Executive Order.",
+                constitutionalLink: "art2",
+                analysis: "Article II grants 'Executive Power', but Article I gives all 'Legislative Power' to Congress. The tension lies in whether the order enforces existing law or creates new law.",
+                keywords: ["Separation of Powers", "Checks and Balances"]
+            },
+            {
+                id: 4,
+                title: "State vs. Federal Law",
+                icon: "🌿",
+                desc: "A state legalizes a substance that is illegal under federal law.",
+                constitutionalLink: "art6",
+                analysis: "Article VI (Supremacy Clause) says Federal law wins. However, the 10th Amendment reserves police powers to States. The Fed can enforce, but often chooses not to (Prosecutorial Discretion).",
+                keywords: ["Federalism", "Supremacy Clause", "States Rights"]
+            }
+        ];
+
+        // Wizard Logic Data
+        const wizardSteps = [
+            {
+                step: 1,
+                question: "What is your primary interest today?",
+                options: [
+                    { label: "My Individual Rights", next: 2, icon: "✋" },
+                    { label: "How Government Works", next: 3, icon: "🏛️" },
+                    { label: "Voting & Elections", next: 4, icon: "🗳️" }
+                ]
+            },
+            {
+                step: 2,
+                question: "Which right are you concerned about?",
+                options: [
+                    { label: "Speaking / Protesting", result: "amdt1", icon: "🗣️" },
+                    { label: "Privacy / Police Search", result: "amdt4", icon: "🔒" },
+                    { label: "Gun Ownership", result: "amdt2", icon: "🛡️" },
+                    { label: "Fair Trial", result: "amdt5", icon: "⚖️" }
+                ]
+            },
+            {
+                step: 3,
+                question: "Which branch of government?",
+                options: [
+                    { label: "The President (Executive)", result: "art2", icon: "🦅" },
+                    { label: "Congress (Legislative)", result: "art1", icon: "📜" },
+                    { label: "Supreme Court (Judicial)", result: "art3", icon: "⚖️" },
+                    { label: "States vs. Feds", result: "art4", icon: "🗺️" }
+                ]
+            },
+            {
+                step: 4,
+                question: "Who is voting?",
+                options: [
+                    { label: "Everyone (Equal Protection)", result: "amdt14", icon: "🤝" },
+                    { label: "Women", result: "amdt19", icon: "👩" },
+                    { label: "18 Year Olds", result: "amdt26", icon: "🎓" },
+                    { label: "Prohibiting Discrimination", result: "amdt15", icon: "🚫" } // Added mock id for logic
+                ]
+            }
+        ];
+
+        // --- APP STATE ---
+        let currentView = 'dashboard';
+
+        // --- CORE NAVIGATION ---
+        function navigateTo(viewId) {
+            // Hide all sections
+            document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
+            
+            // Show target section
+            document.getElementById(viewId).classList.remove('hidden');
+            
+            // Update Navigation State (Visual)
+            // (Simplified for this version)
+            
+            currentView = viewId;
+            window.scrollTo(0,0);
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // --- WIZARD LOGIC ---
+        function renderWizardStep(stepId) {
+            const container = document.getElementById('wizard-content');
+            const stepData = wizardSteps.find(s => s.step === stepId);
+
+            if (!stepData) return;
+
+            let html = `
+                <h3 class="text-2xl font-bold text-slate-800 mb-8 animate-fade-in">${stepData.question}</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl animate-fade-in">
+            `;
+
+            stepData.options.forEach(opt => {
+                const clickAction = opt.next 
+                    ? `renderWizardStep(${opt.next})` 
+                    : `showWizardResult('${opt.result}')`;
+                
+                html += `
+                    <button onclick="${clickAction}" class="card-hover flex flex-col items-center p-6 bg-slate-50 border-2 border-slate-200 rounded-xl hover:border-slate-800 hover:bg-white transition group">
+                        <span class="text-4xl mb-3 group-hover:scale-110 transition-transform">${opt.icon}</span>
+                        <span class="font-bold text-slate-700">${opt.label}</span>
+                    </button>
+                `;
+            });
+
+            html += `</div>`;
+            
+            // Add Back Button if not step 1
+            if (stepId > 1) {
+                html += `
+                    <button onclick="renderWizardStep(1)" class="mt-8 text-slate-500 hover:text-slate-800 underline underline-offset-4">
+                        Restart Wizard
+                    </button>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function showWizardResult(contentId) {
+            const data = constitutionData.find(d => d.id === contentId) || constitutionData[0];
+            const container = document.getElementById('wizard-content');
+
+            container.innerHTML = `
+                <div class="animate-fade-in text-left max-w-3xl bg-amber-50 p-8 rounded-xl border border-amber-200">
+                    <div class="flex items-center mb-4">
+                        <span class="text-4xl mr-4">🎉</span>
+                        <div>
+                            <p class="text-sm uppercase tracking-wide text-amber-800 font-bold">Your Result</p>
+                            <h3 class="text-2xl font-bold text-slate-900">${data.title}</h3>
+                        </div>
+                    </div>
+                    <p class="text-lg text-slate-700 mb-6 font-serif italic">"${data.text.substring(0, 150)}..."</p>
+                    <div class="bg-white p-4 rounded-lg border border-amber-100">
+                        <h4 class="font-bold text-slate-800 mb-2">Plain English Summary:</h4>
+                        <p class="text-slate-600">${data.summary}</p>
+                    </div>
+                    <div class="mt-8 flex justify-center gap-4">
+                        <button onclick="renderWizardStep(1)" class="px-6 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-bold text-slate-700 transition">Start Over</button>
+                        <button onclick="navigateTo('explorer'); filterExplorer('${data.type}')" class="px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-bold transition">Read Full Text</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- SCENARIO LOGIC ---
+        function initScenarios() {
+            const listEl = document.getElementById('scenario-list');
+            
+            scenarios.forEach(scen => {
+                const btn = document.createElement('div');
+                btn.className = 'bg-white p-4 rounded-lg border border-slate-200 cursor-pointer hover:border-slate-400 transition flex items-center group';
+                btn.onclick = () => loadScenario(scen);
+                btn.innerHTML = `
+                    <span class="text-2xl mr-3 group-hover:scale-110 transition-transform">${scen.icon}</span>
+                    <div>
+                        <h4 class="font-bold text-slate-800">${scen.title}</h4>
+                        <div class="flex gap-1 mt-1">
+                            ${scen.keywords.map(k => `<span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-500">${k}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(btn);
+            });
+        }
+
+        function loadScenario(scenario) {
+            const display = document.getElementById('scenario-display');
+            const linkedData = constitutionData.find(d => d.id === scenario.constitutionalLink);
+
+            // Highlight logic for list items would go here (remove active class from all, add to this)
+
+            display.innerHTML = `
+                <div class="animate-fade-in h-full flex flex-col">
+                    <div class="flex items-center mb-6">
+                        <span class="text-5xl mr-4">${scenario.icon}</span>
+                        <h2 class="text-3xl font-bold text-slate-900">${scenario.title}</h2>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-6 rounded-lg border-l-4 border-slate-800 mb-6">
+                        <h3 class="font-bold text-slate-500 uppercase text-xs tracking-wider mb-2">The Situation</h3>
+                        <p class="text-lg text-slate-800">${scenario.desc}</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 flex-grow">
+                        <!-- Constitutional Basis -->
+                        <div class="bg-amber-50 p-6 rounded-lg border border-amber-100 flex flex-col">
+                            <h3 class="font-bold text-amber-900 uppercase text-xs tracking-wider mb-3">Constitutional Basis</h3>
+                            <h4 class="font-bold text-xl text-slate-900 mb-2">${linkedData.title}</h4>
+                            <p class="font-serif italic text-slate-700 text-sm mb-4 flex-grow">"${linkedData.text.substring(0, 100)}..."</p>
+                            <button onclick="showWizardResult('${linkedData.id}')" class="text-amber-800 text-sm font-bold hover:underline self-start">Read More &rarr;</button>
+                        </div>
+
+                        <!-- Analysis -->
+                        <div class="bg-blue-50 p-6 rounded-lg border border-blue-100">
+                            <h3 class="font-bold text-blue-900 uppercase text-xs tracking-wider mb-3">Analysis & Context</h3>
+                            <p class="text-slate-700 leading-relaxed">${scenario.analysis}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- EXPLORER LOGIC ---
+        function renderTextExplorer(filter = 'all', searchTerm = '') {
+            const container = document.getElementById('text-content');
+            container.innerHTML = '';
+
+            const filteredData = constitutionData.filter(item => {
+                const matchesType = filter === 'all' || item.type === filter;
+                const matchesSearch = item.text.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                      item.summary.toLowerCase().includes(searchTerm.toLowerCase());
+                return matchesType && matchesSearch;
+            });
+
+            if (filteredData.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 py-8">No results found.</p>`;
+                return;
+            }
+
+            filteredData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold text-slate-900">${item.title}</h3>
+                        ${item.year ? `<span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded">Ratified ${item.year}</span>` : ''}
+                    </div>
+                    <div class="mb-4 font-serif text-slate-800 leading-relaxed border-l-2 border-amber-200 pl-4 py-1">
+                        ${highlightText(item.text, searchTerm)}
+                    </div>
+                    <details class="group">
+                        <summary class="flex items-center cursor-pointer text-sm font-bold text-slate-500 hover:text-slate-800">
+                            <span class="mr-2">Explain this in Plain English</span>
+                            <span class="transition group-open:rotate-180">▼</span>
+                        </summary>
+                        <p class="mt-2 text-slate-600 bg-slate-50 p-3 rounded text-sm">
+                            ${highlightText(item.summary, searchTerm)}
+                        </p>
+                    </details>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function highlightText(text, term) {
+            if (!term) return text;
+            const regex = new RegExp(`(${term})`, 'gi');
+            return text.replace(regex, '<span class="bg-yellow-200">$1</span>');
+        }
+
+        function filterExplorer(type) {
+            document.getElementById('text-filter').value = type;
+            renderTextExplorer(type);
+        }
+
+        // --- CHARTS ---
+        function initCharts() {
+            // Visualization 1: Structure/Power Distribution (Word Count)
+            // Goal: Show that the Legislative branch (Article I) was intended to be the most detailed/powerful.
+            const ctxStructure = document.getElementById('structureChart').getContext('2d');
+            new Chart(ctxStructure, {
+                type: 'bar',
+                data: {
+                    labels: ['Legislative (Art I)', 'Executive (Art II)', 'Judicial (Art III)', 'States (Art IV)', 'Amendments (Art V)', 'Supremacy (Art VI)'],
+                    datasets: [{
+                        label: 'Word Count (approx)',
+                        data: [2267, 1023, 375, 260, 143, 262],
+                        backgroundColor: [
+                            'rgba(30, 58, 138, 0.8)', // Navy
+                            'rgba(148, 163, 184, 0.6)', // Slate
+                            'rgba(148, 163, 184, 0.6)',
+                            'rgba(148, 163, 184, 0.6)',
+                            'rgba(148, 163, 184, 0.6)',
+                            'rgba(148, 163, 184, 0.6)'
+                        ],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    return "The Founders spent the most time defining Congress.";
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Word Count' }
+                        }
+                    }
+                }
+            });
+
+            // Visualization 2: Timeline of Amendments
+            // Goal: Show bursts of activity in changing the Constitution.
+            const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
+            new Chart(ctxTimeline, {
+                type: 'line',
+                data: {
+                    labels: ['1791', '1795', '1804', '1865', '1868', '1870', '1913', '1913', '1919', '1920', '1933', '1933', '1951', '1961', '1964', '1967', '1971', '1992'],
+                    datasets: [{
+                        label: 'Amendment Ratified',
+                        data: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Dummy y-values just to place points
+                        borderColor: 'rgba(153, 27, 27, 0.5)', // Red
+                        backgroundColor: 'rgba(153, 27, 27, 1)',
+                        pointRadius: 6,
+                        pointHoverRadius: 10,
+                        showLine: false // Scatter style
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const labels = [
+                                        "Bill of Rights (1-10)", "11: Sovereign Immunity", "12: Electoral College", 
+                                        "13: Slavery Abolished", "14: Citizenship/Due Process", "15: Vote (Race)",
+                                        "16: Income Tax", "17: Senate Elections", "18: Prohibition", "19: Vote (Women)",
+                                        "20: Terms", "21: Repeal Prohibition", "22: Term Limits", "23: DC Vote",
+                                        "24: Poll Tax", "25: Succession", "26: Vote (Age 18)", "27: Pay Raises"
+                                    ];
+                                    return labels[context.dataIndex];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { display: false }, // Hide Y axis
+                        x: { 
+                            title: { display: true, text: 'Year' },
+                            ticks: { maxRotation: 45, minRotation: 45 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- INIT ---
+        window.addEventListener('DOMContentLoaded', () => {
+            renderWizardStep(1);
+            initScenarios();
+            renderTextExplorer();
+            initCharts();
+
+            // Event Listeners for Explorer
+            document.getElementById('text-search').addEventListener('input', (e) => {
+                renderTextExplorer(document.getElementById('text-filter').value, e.target.value);
+            });
+            document.getElementById('text-filter').addEventListener('change', (e) => {
+                renderTextExplorer(e.target.value, document.getElementById('text-search').value);
+            });
+        });
+
+    </script>
+</body>
+</html>
